@@ -66,20 +66,29 @@ func Test_GetIgnoreDirs(t *testing.T) {
 	_ = os.RemoveAll("testdir")
 
 	tests := []struct {
-		name      string
-		files     []string
-		want      []string
-		shouldErr bool
+		name            string
+		files           []string
+		want            []string
+		optionalIgnored string
+		shouldErr       bool
 	}{
 		{
-			name:  "Should have defaults",
-			files: []string{},
-			want:  []string{"testdir/build/*", ".*", "node_modules"},
+			name:            "Should have defaults",
+			files:           []string{},
+			want:            []string{"testdir/build/*", ".*", "node_modules"},
+			optionalIgnored: "",
 		},
 		{
-			name:  "Should ignore dotFiles",
-			files: []string{".test1", ".wailsignore"},
-			want:  []string{"testdir/build/*", ".*", "node_modules"},
+			name:            "Should ignore dotFiles",
+			files:           []string{".test1", ".wailsignore"},
+			want:            []string{"testdir/build/*", ".*", "node_modules"},
+			optionalIgnored: "",
+		},
+		{
+			name:            "Should ignore optinalDirs files",
+			files:           []string{"test.pdf", "test2.csv"},
+			want:            []string{"testdir/build/*", ".*", "node_modules", "test.pdf", "test2.csv"},
+			optionalIgnored: "test.pdf,test2.csv",
 		},
 	}
 	for _, tt := range tests {
@@ -95,7 +104,9 @@ func Test_GetIgnoreDirs(t *testing.T) {
 				fs.MustWriteString(filepath.Join("testdir", file), "")
 			}
 
-			got := getIgnoreDirs("testdir")
+			got := getIgnoreDirs("testdir", tt.optionalIgnored)
+
+			log.PrintF got
 
 			got = lo.Map(got, func(s string, _ int) string {
 				return filepath.ToSlash(s)

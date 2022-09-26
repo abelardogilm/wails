@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/wailsapp/wails/v2/internal/fs"
 
@@ -17,10 +18,10 @@ type Watcher interface {
 }
 
 // initialiseWatcher creates the project directory watcher that will trigger recompile
-func initialiseWatcher(cwd string) (*fsnotify.Watcher, error) {
+func initialiseWatcher(cwd string, optionalIgnoredDirs string) (*fsnotify.Watcher, error) {
 
 	// Ignore dot files, node_modules and build directories by default
-	ignoreDirs := getIgnoreDirs(cwd)
+	ignoreDirs := getIgnoreDirs(cwd, optionalIgnoredDirs)
 
 	// Get all subdirectories
 	dirs, err := fs.GetSubdirectories(cwd)
@@ -43,8 +44,17 @@ func initialiseWatcher(cwd string) (*fsnotify.Watcher, error) {
 	return watcher, nil
 }
 
-func getIgnoreDirs(cwd string) []string {
+func getIgnoreDirs(cwd string, optionalIgnoreDirs string) []string {
 	ignoreDirs := []string{filepath.Join(cwd, "build/*"), ".*", "node_modules"}
+
+	if optionalIgnoreDirs != "" {
+		for _, dir := range strings.Split(optionalIgnoreDirs, ",") {
+			if dir == "" {
+				continue
+			}
+			ignoreDirs = append(ignoreDirs, dir)
+		}
+	}
 
 	// Read .gitignore into ignoreDirs
 	f, err := os.Open(filepath.Join(cwd, ".gitignore"))

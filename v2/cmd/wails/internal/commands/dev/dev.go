@@ -93,6 +93,7 @@ type devFlags struct {
 
 	frontendDevServerURL string
 	skipFrontend         bool
+	ignoreFolders        string
 }
 
 // AddSubcommand adds the `dev` command for the Wails application
@@ -121,6 +122,7 @@ func AddSubcommand(app *clir.Cli, w io.Writer) error {
 	command.BoolFlag("save", "Save given flags as defaults", &flags.saveConfig)
 	command.BoolFlag("race", "Build with Go's race detector", &flags.raceDetector)
 	command.BoolFlag("s", "Skips building the frontend", &flags.skipFrontend)
+	command.StringFlag("ignorefolders", "Dirs for watcher to ignore (comma separated, relative to wd)", &flags.ignoreFolders)
 
 	command.Action(func() error {
 		// Create logger
@@ -240,7 +242,7 @@ func AddSubcommand(app *clir.Cli, w io.Writer) error {
 		}
 
 		// create the project files watcher
-		watcher, err := initialiseWatcher(cwd)
+		watcher, err := initialiseWatcher(cwd, flags.ignoreFolders)
 		if err != nil {
 			return err
 		}
